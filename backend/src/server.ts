@@ -40,6 +40,15 @@ const limiter = rateLimit({
   max: 200, // Limit each IP to 200 requests per windowMs
   message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
 });
+// Root API Status Endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'UniSync API Core Engine is fully operational.',
+    version: '1.0.0'
+  });
+});
+
 app.use('/api/', limiter);
 app.use('/api/syncai', syncaiRouter);
 
