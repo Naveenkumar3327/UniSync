@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import multer from 'multer';
 import pdfParse = require('pdf-parse');
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { supabase } from '../services/db';
+import { supabase, isOpportunitiesTableAvailable } from '../services/db';
 import { mockOpportunities, runAggregator, Opportunity } from '../services/aggregator';
 import { getEmbedding, generateChatReply } from '../services/aiService';
 
@@ -47,7 +47,7 @@ router.get('/opportunities', authenticate, async (req: AuthRequest, res: Respons
     const { category, department, source, search } = req.query;
     let list: Opportunity[] = [];
 
-    if (supabase) {
+    if (supabase && isOpportunitiesTableAvailable) {
       const query = supabase.from('opportunities').select('*');
       if (category) query.eq('category', category);
       if (department) query.eq('department', department);
@@ -123,7 +123,7 @@ router.get('/recommendations', authenticate, async (req: AuthRequest, res: Respo
     const skills = skillsString.split(',').map(s => s.trim().toLowerCase());
 
     let list: Opportunity[] = [];
-    if (supabase) {
+    if (supabase && isOpportunitiesTableAvailable) {
       const { data, error } = await supabase.from('opportunities').select('*');
       if (!error && data) {
         list = data;
@@ -372,7 +372,7 @@ router.post('/chat', authenticate, async (req: AuthRequest, res: Response) => {
 
     // B. Fetch opportunities to search over
     let list: Opportunity[] = [];
-    if (supabase) {
+    if (supabase && isOpportunitiesTableAvailable) {
       const { data, error } = await supabase.from('opportunities').select('*');
       if (!error && data) {
         list = data;

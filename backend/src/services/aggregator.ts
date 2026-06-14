@@ -1,4 +1,4 @@
-import { supabase } from './db';
+import { supabase, isOpportunitiesTableAvailable } from './db';
 import { getEmbedding } from './aiService';
 
 export interface Opportunity {
@@ -222,7 +222,7 @@ export async function runAggregator(): Promise<void> {
     console.log(`SyncAI Aggregator: In-memory opportunities refreshed (${mockOpportunities.length} entries).`);
 
     // 2. Persist to Supabase if configured
-    if (supabase) {
+    if (supabase && isOpportunitiesTableAvailable) {
       console.log('SyncAI Aggregator: Uploading opportunities to Supabase...');
       // First clean up old entries to simulate fresh sync
       const { error: deleteError } = await supabase
@@ -261,6 +261,8 @@ export async function runAggregator(): Promise<void> {
       } else {
         console.log(`SyncAI Aggregator: Successfully persisted ${data?.length || 0} opportunities to Supabase PG.`);
       }
+    } else if (supabase) {
+      console.log('SyncAI Aggregator: Supabase table not available. Skipping DB sync (running in local fallback in-memory mode).');
     }
   } catch (err) {
     console.error('SyncAI Aggregator: Critical error in aggregator crawl job:', err);
