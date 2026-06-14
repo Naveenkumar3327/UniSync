@@ -13,6 +13,8 @@ import {
 } from './models/types';
 import syncaiRouter from './routes/syncai';
 import { initAggregatorScheduler } from './services/aggregator';
+import crypto from 'crypto';
+import { supabase, isOpportunitiesTableAvailable } from './services/db';
 
 const app = express();
 const server = http.createServer(app);
@@ -266,24 +268,26 @@ let mockAuditLogs: any[] = [
 // ==========================================
 
 // Auth/Register Route Handler
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const { role, email, password, username, ...details } = req.body;
   if (!email || !username) {
     return res.status(400).json({ error: 'Email and Username are required' });
   }
 
-  const newUserId = `user-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate a valid UUID for database compatibility
+  const newUserId = crypto.randomUUID();
   const newUser: User = { id: newUserId, role: role || 'student' };
   mockUsers.push(newUser);
 
+  let profileData: any = {};
   if (role === 'student') {
-    const newStudent: Student = {
+    profileData = {
       id: newUserId,
       full_name: details.full_name || username,
       email,
-      phone: details.phone,
-      gender: details.gender,
-      dob: details.dob,
+      phone: details.phone || null,
+      gender: details.gender || null,
+      dob: details.dob || null,
       roll_number: details.roll_number || `ROLL-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
       register_number: details.register_number || `REG-${Math.random().toString().substr(2, 8)}`,
       department: details.department || 'Computer Science & Engineering',
@@ -291,48 +295,105 @@ app.post('/api/auth/register', (req, res) => {
       semester: parseInt(details.semester) || 1,
       section: details.section || 'A',
       student_type: details.student_type || 'day_scholar',
-      hostel_block: details.hostel_block,
-      room_number: details.room_number,
-      floor_number: parseInt(details.floor_number),
-      bed_number: details.bed_number,
-      bus_number: details.bus_number,
-      boarding_point: details.boarding_point,
-      transport_type: details.transport_type,
-      parking_details: details.parking_details,
+      hostel_block: details.hostel_block || null,
+      room_number: details.room_number || null,
+      floor_number: details.floor_number ? parseInt(details.floor_number) : null,
+      bed_number: details.bed_number || null,
+      bus_number: details.bus_number || null,
+      boarding_point: details.boarding_point || null,
+      transport_type: details.transport_type || null,
+      parking_details: details.parking_details || null,
       username
     };
-    mockStudents.push(newStudent);
-    return res.status(201).json({ user: newUser, profile: newStudent, token: `mock-token-${role}` });
+    mockStudents.push(profileData);
   } else if (role === 'staff') {
-    const newStaff: Staff = {
+    profileData = {
       id: newUserId,
       staff_name: details.staff_name || username,
       staff_id: details.staff_id || `STF-${Math.random().toString().substr(2, 4)}`,
       department: details.department || 'Computer Science & Engineering',
       designation: details.designation || 'Lecturer',
       email,
-      phone: details.phone,
+      phone: details.phone || null,
       username
     };
-    mockStaffs.push(newStaff);
-    return res.status(201).json({ user: newUser, profile: newStaff, token: `mock-token-${role}` });
+    mockStaffs.push(profileData);
   } else {
-    const newAdmin: Admin = {
+    profileData = {
       id: newUserId,
       admin_name: details.admin_name || username,
       email,
-      phone: details.phone,
+      phone: details.phone || null,
       username
     };
-    mockAdmins.push(newAdmin);
-    return res.status(201).json({ user: newUser, profile: newAdmin, token: `mock-token-${role}` });
+    mockAdmins.push(profileData);
   }
+
+  // Save to Supabase DB if available
+  if (supabase && isOpportunitiesTableAvailable) {
+    try {
+      // 1. Insert into users table
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({ id: newUserId, role: role || 'student' });
+
+      if (userError) {
+        console.error('SyncAI Auth DB: Error inserting into users table:', userError.message);
+      } else {
+        // 2. Insert into respective profile table
+        const profileTable = role === 'student' ? 'students' : role === 'staff' ? 'staff' : 'admins';
+        const { error: profileError } = await supabase
+          .from(profileTable)
+          .insert(profileData);
+
+        if (profileError) {
+          console.error(`SyncAI Auth DB: Error inserting into ${profileTable} table:`, profileError.message);
+        } else {
+          console.log(`SyncAI Auth DB: Successfully persisted user registration for ${email} in Supabase.`);
+        }
+      }
+    } catch (err: any) {
+      console.error('SyncAI Auth DB: Unexpected error inserting user registration:', err.message);
+    }
+  }
+
+  return res.status(201).json({ user: newUser, profile: profileData, token: `mock-token-${role}` });
 });
 
 // Login Handler
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password, role } = req.body;
-  
+
+  // A. Check Supabase DB first if available
+  if (supabase && isOpportunitiesTableAvailable) {
+    try {
+      const profileTable = role === 'student' ? 'students' : role === 'staff' ? 'staff' : 'admins';
+      const { data: profileData, error: profileError } = await supabase
+        .from(profileTable)
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!profileError && profileData) {
+        // Fetch user details from users table
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', profileData.id)
+          .maybeSingle();
+
+        const userObj = userData || { id: profileData.id, role: role };
+        return res.json({
+          user: userObj,
+          profile: profileData,
+          token: `db-token-${role}`
+        });
+      }
+    } catch (err: any) {
+      console.warn('SyncAI Auth: Supabase database query failed. Falling back to memory.', err.message);
+    }
+  }
+
   // Demo logs bypass
   if (email === 'student@university.edu' || email === 'alex.mercer@university.edu') {
     return res.json({
