@@ -5,7 +5,7 @@ import { useThemeStore } from '../store/themeStore';
 import { 
   Home, Megaphone, FileText, Search, Users, Trophy, BookOpen, 
   BarChart2, Bell, User, Settings, LogOut, ChevronLeft, ChevronRight, 
-  HelpCircle, Calendar, Shield, Activity, DollarSign, CalendarDays
+  HelpCircle, Calendar, Shield, Activity, DollarSign, CalendarDays, Briefcase
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -31,6 +31,7 @@ export default function Sidebar() {
         return [
           { name: 'Dashboard', path: '/dashboard/student', icon: Home },
           { name: 'Announcements', path: '/dashboard/student/announcements', icon: Megaphone },
+          { name: 'Opportunity Hub', path: '/dashboard/student/opportunity-hub', icon: Briefcase },
           { name: 'Complaints', path: '/dashboard/student/complaints', icon: FileText },
           { name: 'Lost & Found', path: '/dashboard/student/lost-found', icon: Search },
           { name: 'Collaborations', path: '/dashboard/student/collaboration', icon: Users },
@@ -39,7 +40,7 @@ export default function Sidebar() {
           { name: 'Marketplace', path: '/dashboard/student/marketplace', icon: DollarSign },
           { name: 'Achievements', path: '/dashboard/student/achievements', icon: Trophy },
           { name: 'Notifications', path: '/dashboard/student/notifications', icon: Bell },
-          { name: 'Settings', path: '/dashboard/student/settings', icon: Settings },
+          { name: 'Profile', path: '/dashboard/student/profile', icon: User },
         ];
       case 'staff':
         return [
@@ -51,7 +52,7 @@ export default function Sidebar() {
           { name: 'Collaborations', path: '/dashboard/staff/collaborations', icon: Users },
           { name: 'Analytics', path: '/dashboard/staff/analytics', icon: Activity },
           { name: 'Notifications', path: '/dashboard/staff/notifications', icon: Bell },
-          { name: 'Settings', path: '/dashboard/staff/settings', icon: Settings },
+          { name: 'Profile', path: '/dashboard/staff/profile', icon: User },
         ];
       case 'admin':
         return [
@@ -63,7 +64,7 @@ export default function Sidebar() {
           { name: 'Analytics', path: '/dashboard/admin/analytics', icon: Activity },
           { name: 'Audit Logs', path: '/dashboard/admin/audit-logs', icon: Shield },
           { name: 'Notifications', path: '/dashboard/admin/notifications', icon: Bell },
-          { name: 'Settings', path: '/dashboard/admin/settings', icon: Settings },
+          { name: 'Profile', path: '/dashboard/admin/profile', icon: User },
         ];
       default:
         return [];

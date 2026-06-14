@@ -3,6 +3,7 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import Sidebar from '../components/Sidebar';
+import FloatingChatWidget from '../components/FloatingChatWidget';
 import { Bell, Sun, Moon, Search, User } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -85,7 +86,7 @@ export default function DashboardLayout() {
                 <span className="text-xs font-semibold text-text">{fullName}</span>
                 <span className="text-[10px] text-text-muted capitalize">{role} Account</span>
               </div>
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm cursor-pointer" onClick={() => navigate(`/dashboard/${role}/settings`)}>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm cursor-pointer" onClick={() => navigate(`/dashboard/${role}/profile`)}>
                 {fullName.charAt(0)}
               </div>
             </div>
@@ -97,6 +98,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <FloatingChatWidget />
     </div>
   );
 }

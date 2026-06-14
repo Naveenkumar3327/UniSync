@@ -311,6 +311,27 @@ CREATE TABLE IF NOT EXISTS settings (
     value JSONB NOT NULL
 );
 
+-- 14b. OPPORTUNITIES & VECTOR SEARCH
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS opportunities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    company TEXT NOT NULL,
+    source TEXT NOT NULL,
+    category TEXT NOT NULL,
+    department TEXT,
+    location TEXT,
+    eligibility TEXT,
+    skills TEXT[],
+    description TEXT NOT NULL,
+    apply_link TEXT,
+    deadline TIMESTAMP WITH TIME ZONE,
+    image_url TEXT,
+    embedding vector(768),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 15. ROW-LEVEL SECURITY & TRIGGERS
 -- Enable RLS on core tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -319,6 +340,7 @@ ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE complaints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE study_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
 
 -- Base Policies (Example for user profile reading)
 CREATE POLICY "Allow public read for profiles" ON students 
@@ -326,6 +348,12 @@ CREATE POLICY "Allow public read for profiles" ON students
 
 CREATE POLICY "Allow students to manage own profile" ON students 
     FOR ALL USING (auth.uid() = id);
+
+CREATE POLICY "Allow public read for opportunities" ON opportunities
+    FOR SELECT USING (true);
+
+CREATE POLICY "Allow admins/staff to manage opportunities" ON opportunities
+    FOR ALL USING (true); -- Simplify for campus context
 
 -- Trigger: Automatically update the updated_at column
 CREATE OR REPLACE FUNCTION update_modified_column()
@@ -361,3 +389,16 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO admins (id, admin_name, email, phone, username) VALUES
 ('33333333-3333-3333-3333-333333333333', 'Executive Admin Chief', 'admin.chief@university.edu', '+15550999', 'admin_chief')
 ON CONFLICT (id) DO NOTHING;
+
+-- Seed Opportunities
+INSERT INTO opportunities (title, company, source, category, department, location, eligibility, skills, description, apply_link, deadline, image_url) VALUES
+('AI / ML Research Intern', 'Google', 'Company Career Pages', 'internship', 'Computer Science & Engineering', 'Bangalore, India', 'Pre-final / Final year B.Tech/M.Tech CS students', ARRAY['Python', 'PyTorch', 'Machine Learning', 'TensorFlow'], 'Join the Google research group in Bangalore working on state-of-the-art Generative AI technologies and large language models.', 'https://careers.google.com', NOW() + INTERVAL '30 days', 'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?auto=format&fit=crop&q=80&w=200'),
+('Full Stack Developer Job', 'Microsoft', 'LinkedIn Jobs', 'job', 'Computer Science & Engineering', 'Remote', 'Graduating B.Tech CS students, CGPA > 8.0', ARRAY['React', 'TypeScript', 'Node.js', 'PostgreSQL'], 'Microsoft Azure team is hiring full stack developers experienced with typescript ecosystem, relational databases, and scalable web apps.', 'https://careers.microsoft.com', NOW() + INTERVAL '15 days', 'https://images.unsplash.com/photo-1625014618427-fbc980b974f5?auto=format&fit=crop&q=80&w=200'),
+('Smart India Hackathon 2026', 'Govt of India', 'Unstop', 'hackathon', 'Computer Science & Engineering', 'New Delhi, India', 'Open to all engineering students', ARRAY['React', 'Flask', 'AI', 'IoT'], 'National-level hackathon to solve critical challenges faced by governmental departments. $5000 grand prize.', 'https://unstop.com', NOW() + INTERVAL '5 days', 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=200'),
+('CAD Design Intern', 'Tesla', 'Company Career Pages', 'internship', 'Mechanical Engineering', 'Bangalore, India', 'Mechanical Engineering students in 3rd/4th year', ARRAY['CAD', 'SolidWorks', 'CATIA', 'Finite Element Analysis'], 'Collaborate with Tesla mechanical engineers on structural design and thermal systems analysis for energy storage installations.', 'https://careers.tesla.com', NOW() + INTERVAL '20 days', 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=200'),
+('Embedded Systems Engineer', 'Intel', 'Wellfound', 'job', 'Electronics & Communication Engineering', 'Bangalore, India', 'ECE grads with embedded experience', ARRAY['Embedded C', 'RTOS', 'Microcontrollers', 'IoT', 'C++'], 'Intel is seeking embedded developers to work on chipset firmware, hardware-software integration, and RTOS configurations.', 'https://careers.intel.com', NOW() + INTERVAL '12 days', 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=200'),
+('IoT Security Workshop', 'UniSync Club', 'Unstop', 'workshop', 'Electronics & Communication Engineering', 'Campus Seminar Hall', 'Open to all ECE & CSE students', ARRAY['IoT', 'Security', 'Embedded C'], 'Interactive 2-day workshop on firmware security analysis, penetration testing of connected components, and device hardening.', 'https://unisync.edu/events', NOW() + INTERVAL '3 days', 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=200'),
+('Venture Capital Scholarship', 'Sequoia Capital', 'Foundit', 'scholarship', 'Computer Science & Engineering', 'Global', 'B.Tech/Dual degree students in STEM', ARRAY['Entrepreneurship', 'Product Development'], 'Scholarship of $10,000 for undergraduate students demonstrating exceptional technical building skills and startup vision.', 'https://sequoiacap.com', NOW() + INTERVAL '45 days', 'https://images.unsplash.com/photo-1579532561814-c1bc1de747c1?auto=format&fit=crop&q=80&w=200'),
+('Full Stack Developer Drive', 'TCS', 'Naukri', 'drive', 'Computer Science & Engineering', 'Campus Placement Drive', 'All 4th-year CSE/ECE/IT students eligible', ARRAY['Java', 'React', 'SQL'], 'TCS Mega campus placement drive for system engineers and digital developers.', 'https://tcs.com', NOW() + INTERVAL '2 days', 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=200')
+ON CONFLICT DO NOTHING;
+

@@ -4,7 +4,8 @@ import { useAuthStore } from '../store/authStore';
 import { 
   Megaphone, FileText, Search, BookOpen, BarChart2, 
   DollarSign, Trophy, Bell, Settings, Send, Paperclip, 
-  Plus, Calendar, QrCode, Heart, MessageCircle, ShieldAlert 
+  Plus, Calendar, QrCode, Heart, MessageCircle, ShieldAlert,
+  User, Lock, Mail, Hash
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -890,44 +891,202 @@ export function Notifications() {
 }
 
 // ==========================================
-// 10. SETTINGS & PROFILE PREFERENCES
+// 10. MY CAMPUS PROFILE
 // ==========================================
-export function SettingsPage() {
+export function ProfilePage() {
   const { user, updateProfile } = useAuthStore();
   const profile = user?.profile || {};
+  const role = user?.role || 'student';
+  
   const [name, setName] = useState(profile.full_name || profile.staff_name || profile.admin_name || '');
   const [phone, setPhone] = useState(profile.phone || '');
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({ full_name: name, staff_name: name, admin_name: name, phone });
-    alert('Settings saved and profile cached successfully.');
+    updateProfile({ 
+      full_name: role === 'student' ? name : undefined, 
+      staff_name: role === 'staff' ? name : undefined, 
+      admin_name: role === 'admin' ? name : undefined, 
+      phone 
+    });
+    alert('Profile information updated successfully.');
+  };
+
+  const getRoleBadgeColor = () => {
+    switch (role) {
+      case 'admin': return 'bg-rose-500/10 text-rose-500 border border-rose-500/20';
+      case 'staff': return 'bg-secondary/10 text-secondary border border-secondary/20';
+      default: return 'bg-primary/10 text-primary border border-primary/20';
+    }
   };
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto">
-      <div>
-        <h2 className="text-xl font-bold font-display text-text">Settings Preferences</h2>
-        <p className="text-xs text-text-muted">Update contact numbers and personal settings indicators.</p>
+    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+      
+      {/* 1. Header Banner & Profile Card */}
+      <div className="glass-panel p-6 rounded-3xl border border-card-border relative overflow-hidden bg-gradient-to-r from-primary-light via-transparent to-transparent flex flex-col sm:flex-row items-center gap-5">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white text-3xl font-extrabold shadow-md border-2 border-white/10 shrink-0">
+          {name.charAt(0).toUpperCase()}
+        </div>
+        
+        <div className="text-center sm:text-left space-y-1.5 flex-1 min-w-0">
+          <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-extrabold font-display text-text truncate">
+              {name}
+            </h2>
+            <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${getRoleBadgeColor()}`}>
+              {role}
+            </span>
+          </div>
+          
+          <p className="text-xs text-text-muted">
+            {role === 'student' ? profile.department : profile.department || 'Campus Operations & Security'}
+          </p>
+          
+          <p className="text-[10px] text-text-muted flex items-center justify-center sm:justify-start gap-1">
+            <Mail size={10} /> {profile.email || 'no-email@university.edu'}
+          </p>
+        </div>
       </div>
 
-      <div className="glass-panel p-6 rounded-2xl border border-card-border">
-        <form onSubmit={handleSave} className="space-y-4">
-          <div>
-            <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">Full Name</label>
-            <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full bg-background-alt border border-card-border rounded-xl p-2.5 text-xs text-text focus:outline-none focus:border-primary" />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        
+        {/* 2. Editable preferences form (2/5 cols) */}
+        <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-card-border h-fit space-y-4">
+          <h3 className="text-sm font-bold text-text flex items-center gap-1.5 pb-2 border-b border-card-border">
+            <User size={16} className="text-primary" /> Personal Preferences
+          </h3>
+          
+          <form onSubmit={handleSave} className="space-y-4">
+            <div>
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">Display Name</label>
+              <input 
+                type="text" 
+                required 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                className="w-full bg-background-alt border border-card-border rounded-xl p-2.5 text-xs text-text focus:outline-none focus:border-primary transition-all" 
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">Contact Phone</label>
+              <input 
+                type="text" 
+                value={phone} 
+                onChange={e => setPhone(e.target.value)} 
+                placeholder="+1 555 0199"
+                className="w-full bg-background-alt border border-card-border rounded-xl p-2.5 text-xs text-text focus:outline-none focus:border-primary transition-all" 
+              />
+            </div>
+
+            <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-premium">
+              Save Profile Settings
+            </button>
+          </form>
+        </div>
+
+        {/* 3. Verified Campus Records (3/5 cols) */}
+        <div className="lg:col-span-3 glass-panel p-5 rounded-2xl border border-card-border space-y-4">
+          <div className="flex justify-between items-center pb-2 border-b border-card-border">
+            <h3 className="text-sm font-bold text-text flex items-center gap-1.5">
+              <Lock size={15} className="text-text-muted" /> Official Verified Records
+            </h3>
+            <span className="text-[9px] bg-slate-500/10 text-text-muted font-bold px-2 py-0.5 rounded flex items-center gap-1">
+              Read-Only
+            </span>
           </div>
 
-          <div>
-            <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">Contact Phone</label>
-            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-background-alt border border-card-border rounded-xl p-2.5 text-xs text-text focus:outline-none focus:border-primary" />
+          <div className="p-3 bg-slate-500/5 border border-card-border rounded-xl flex items-start gap-2.5">
+            <ShieldAlert size={16} className="text-text-muted shrink-0 mt-0.5" />
+            <p className="text-[10px] text-text-muted leading-relaxed">
+              These details are synchronised from the official campus registration directory database. To make corrections, please contact the Registrar's Office.
+            </p>
           </div>
 
-          <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-premium">
-            Save Settings Changes
-          </button>
-        </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+            
+            {/* Username */}
+            <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Campus Username</span>
+              <span className="text-xs font-semibold text-text truncate mt-1">{profile.username || 'N/A'}</span>
+              <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+            </div>
+
+            {/* Email */}
+            <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">University Email</span>
+              <span className="text-xs font-semibold text-text truncate mt-1">{profile.email || 'N/A'}</span>
+              <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+            </div>
+
+            {/* Roll/Staff ID */}
+            {role !== 'admin' && (
+              <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">
+                  {role === 'student' ? 'Roll Number' : 'Staff ID'}
+                </span>
+                <span className="text-xs font-semibold text-text truncate mt-1">
+                  {role === 'student' ? profile.roll_number : profile.staff_id}
+                </span>
+                <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+              </div>
+            )}
+
+            {/* Register Number (Students only) */}
+            {role === 'student' && (
+              <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Registration Number</span>
+                <span className="text-xs font-semibold text-text truncate mt-1">{profile.register_number || 'N/A'}</span>
+                <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+              </div>
+            )}
+
+            {/* Academic details (Students only) */}
+            {role === 'student' && (
+              <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Academic Track</span>
+                <span className="text-xs font-semibold text-text truncate mt-1">
+                  Year {profile.year} &bull; Sem {profile.semester} (Sec {profile.section})
+                </span>
+                <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+              </div>
+            )}
+
+            {/* Designation (Staff only) */}
+            {role === 'staff' && (
+              <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Academic Designation</span>
+                <span className="text-xs font-semibold text-text truncate mt-1">{profile.designation || 'Lecturer'}</span>
+                <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+              </div>
+            )}
+
+            {/* Student Type / Room number */}
+            {role === 'student' && (
+              <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px]">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Enrollment Type</span>
+                <span className="text-xs font-semibold text-text truncate mt-1 capitalize">
+                  {profile.student_type} {profile.room_number ? `(Room ${profile.room_number})` : ''}
+                </span>
+                <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+              </div>
+            )}
+
+            {/* Department */}
+            <div className="p-3 bg-background-alt border border-card-border/60 rounded-xl relative overflow-hidden flex flex-col justify-between h-[68px] sm:col-span-2">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">College Department</span>
+              <span className="text-xs font-semibold text-text truncate mt-1">
+                {role === 'admin' ? 'Operations Administration' : profile.department || 'Engineering Division'}
+              </span>
+              <Lock size={10} className="absolute top-3 right-3 text-text-muted opacity-40" />
+            </div>
+
+          </div>
+        </div>
+
       </div>
+
     </div>
   );
 }

@@ -1,17 +1,18 @@
+import 'dotenv/config';
+
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { authenticate, requireRole, AuthRequest } from './middleware/auth';
 import { 
   User, Student, Staff, Admin, Announcement, Complaint, 
   Poll, StudyRoom, Message, UserRole 
 } from './models/types';
-
-dotenv.config();
+import syncaiRouter from './routes/syncai';
+import { initAggregatorScheduler } from './services/aggregator';
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +39,7 @@ const limiter = rateLimit({
   message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 app.use('/api/', limiter);
+app.use('/api/syncai', syncaiRouter);
 
 // ==========================================
 // IN-MEMORY DATABASE FALLBACK STATE
@@ -851,6 +853,7 @@ io.on('connection', (socket) => {
 
 // Start Server
 server.listen(PORT, () => {
+  initAggregatorScheduler();
   console.log(`=======================================================`);
   console.log(`UniSync Core Engine running on port: ${PORT}`);
   console.log(`Real-time WebSockets configured & bound.`);
