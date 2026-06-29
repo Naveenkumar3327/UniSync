@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import LandingPage from './pages/LandingPage';
 import Auth from './pages/Auth';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -69,6 +70,7 @@ export default function App() {
         {/* Global Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
